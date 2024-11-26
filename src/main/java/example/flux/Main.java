@@ -2,16 +2,57 @@ package example.flux;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
       //  example1();
       //  example2();
-        example3BackPressure();
+      //  example3BackPressure();
+     //   example4Cold();
+      //  example5Hot();
+        example6HotAuto();
+    }
+
+    private static void example4Cold() throws InterruptedException {
+        Flux<Long> interval = Flux.interval(Duration.ofMillis(300));
+        System.out.println("начало");
+        Thread.sleep(1000);
+        interval.subscribe(i-> System.out.println("Подписчик 1: значение = "+i));
+        Thread.sleep(1500);
+        interval.subscribe(i-> System.out.println("Подписчик 2: значение = "+i));
+        Thread.sleep(3000);
+        System.out.println("конец");
+    }
+
+    private static void example5Hot() throws InterruptedException {
+        Flux<Long> interval = Flux.interval(Duration.ofMillis(300));
+        ConnectableFlux<Long> hotInterval = interval.publish();
+        System.out.println("начало");
+        hotInterval.connect();
+        Thread.sleep(1000);
+        hotInterval.subscribe(i-> System.out.println("Подписчик 1: значение = "+i));
+        Thread.sleep(1500);
+        hotInterval.subscribe(i-> System.out.println("Подписчик 2: значение = "+i));
+        Thread.sleep(3000);
+        System.out.println("конец");
+    }
+
+    private static void example6HotAuto() throws InterruptedException {
+        Flux<Long> interval = Flux.interval(Duration.ofMillis(300));
+        ConnectableFlux<Long> hotInterval = interval.publish();
+        System.out.println("начало");
+        Flux<Long> hotAuto = hotInterval.autoConnect(2);        //ожидание нужного числа подписчиков
+        Thread.sleep(1000);
+        hotAuto.subscribe(i-> System.out.println("Подписчик 1: значение = "+i));
+        Thread.sleep(1500);
+        hotAuto.subscribe(i-> System.out.println("Подписчик 2: значение = "+i));
+        Thread.sleep(3000);
+        System.out.println("конец");
     }
 
     private static void example3BackPressure() {
